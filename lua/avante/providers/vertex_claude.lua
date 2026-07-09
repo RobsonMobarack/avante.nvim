@@ -2,7 +2,7 @@ local P = require("avante.providers")
 local Utils = require("avante.utils")
 local Vertex = require("avante.providers.vertex")
 
----@class AvanteProviderFunctor
+---@class AvanteVertexClaudeProviderFunctor : AvanteProviderFunctor
 local M = {}
 
 M.role_map = {
@@ -63,6 +63,9 @@ function M:parse_curl_args(prompt_opts)
     },
     tools = tools,
   })
+
+  -- Strip temperature for models that don't support it (e.g. Claude 4+ with always-on thinking)
+  if P.claude.is_temperature_unsupported(provider_conf.model) then request_body.temperature = nil end
 
   return {
     url = url,

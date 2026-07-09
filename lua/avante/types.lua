@@ -1,4 +1,4 @@
----@meta
+---@meta types
 
 ---@class vim.api.create_autocmd.callback.args
 ---@field id number
@@ -248,20 +248,21 @@ vim.g.avante_login = vim.g.avante_login
 ---@alias AvanteResponseParser fun(self: AvanteProviderFunctor, ctx: any, data_stream: string, event_state: string?, opts: AvanteHandlerOptions): nil
 ---
 ---@class AvanteDefaultBaseProvider: table<string, any>
----@field endpoint string
+---@field endpoint string Endpoint (e.g. "https://api.mistral.ai/v1")
 ---@field extra_request_body? table<string, any>
 ---@field model? string
----@field model_names? string[]
+---@field model_names? string[] a list of model to choose from
 ---@field local? boolean
 ---@field proxy? string
 ---@field keep_alive? string
 ---@field timeout integer Timeout in milliseconds, increase this for reasoning models
 ---@field allow_insecure? boolean Allow insecure server connections
 ---@field api_key_name? string
+---Either the name of the environment variable containing the API key (avante will try a variant prefixed with "AVANTE_" as well) or if the value starts with "cmd:", avante will run the command and retreive the key from its stdout
 ---@field _shellenv? string
 ---@field disable_tools? boolean disable if prompt consumes too many tokens
 ---@field entra? boolean
----@field hide_in_model_selector? boolean
+---@field hide_in_model_selector? boolean Dont show provider in |:AvanteSwitchProvider|
 ---@field use_ReAct_prompt? boolean
 ---@field context_window? integer
 ---@field use_response_api? boolean | fun(provider: AvanteDefaultBaseProvider, ctx?: any): boolean
@@ -346,6 +347,7 @@ vim.g.avante_login = vim.g.avante_login
 ---@field parse_api_key? fun(): string | nil
 ---
 ---@class AvanteProviderFunctor
+---  Implementation of a LLM provider
 ---@field _model_list_cache table
 ---@field extra_headers fun(table): table | table | nil
 ---@field support_prompt_caching boolean | nil
@@ -356,7 +358,7 @@ vim.g.avante_login = vim.g.avante_login
 ---@field is_disable_stream fun(self: AvanteProviderFunctor): boolean
 ---@field setup fun(): nil
 ---@field is_env_set fun(): boolean
----@field api_key_name string
+---@field api_key_name string Name of the environment variable
 ---@field tokenizer_id string | "gpt-4o"
 ---@field model? string
 ---@field context_window? integer
@@ -378,6 +380,10 @@ vim.g.avante_login = vim.g.avante_login
 ---@field parse_messages AvanteMessagesParser
 ---@field parse_response AvanteResponseParser
 ---@field build_bedrock_payload AvanteBedrockPayloadBuilder
+---
+---@class AvanteClaudeProviderFunctor: AvanteProviderFunctor
+---@field is_temperature_unsupported fun(string): boolean
+---@field transform_anthropic_usage any
 ---
 ---@class AvanteACPProvider
 ---@field command string

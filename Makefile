@@ -8,9 +8,14 @@ else ifeq ($(UNAME), Darwin)
 	OS := macOS
 	# looks interchangeable with "dylib", but nvim will find .so automatically in rtp
 	EXT := so
+	CARGO_EXT := dylib
 else
 	$(error Unsupported operating system: $(UNAME))
 endif
+
+CARGO_EXT ?= $(EXT)
+CARGO_TARGET ?=
+TARGET_DIR := target$(if $(CARGO_TARGET),/$(CARGO_TARGET))/release
 
 LUA_VERSIONS := luajit lua51
 
@@ -48,8 +53,8 @@ $(foreach lua_version,$(LUA_VERSIONS),$(eval $(call make_definitions,$(lua_versi
 
 define build_package
 $1-$2:
-	cargo build --release --features=$1 -p avante-$2
-	cp target/release/libavante_$(shell echo $2 | tr - _).$(EXT) $(BUILD_DIR)/avante_$(shell echo $2 | tr - _).$(EXT)
+	cargo build --release --features=$1 -p avante-$2 $(if $(CARGO_TARGET),--target $(CARGO_TARGET))
+	cp $(TARGET_DIR)/libavante_$(shell echo $2 | tr - _).$(CARGO_EXT) $(BUILD_DIR)/avante_$(shell echo $2 | tr - _).$(EXT)
 endef
 
 define build_targets
@@ -85,7 +90,11 @@ docgen:
 		lua/avante/utils/prompts.lua \
 		lua/avante/extensions/init.lua \
 		lua/avante/utils/init.lua \
+		lua/avante/libs/acp_client.lua \
+		lua/avante/providers/openai.lua \
+		lua/avante/providers/claude.lua \
 		> doc/avante.txt
+	nvim -u NONE -i NONE --headless +'helptags doc' +'quit!'
 
 luacheck:
 	@luacheck `find \( -path './target' -prune \) -o -name "*.lua" -print` --codes

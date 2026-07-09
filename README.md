@@ -5,7 +5,7 @@
 
 <p align="center">
   <a href="https://neovim.io/" target="_blank"><img src="https://img.shields.io/static/v1?style=flat-square&label=Neovim&message=v0.10%2b&logo=neovim&labelColor=282828&logoColor=8faa80&color=414b32" alt="Neovim: v0.10+" /></a>
-  <a href="https://github.com/yetone/avante.nvim/actions/workflows/lua.yaml" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/yetone/avante.nvim/lua.yaml?style=flat-square&logo=lua&logoColor=c7c7c7&label=Lua+CI&labelColor=1E40AF&color=347D39&event=push" alt="Lua CI status" /></a>
+  <a href="https://github.com/yetone/avante.nvim/actions/workflows/tests.yaml" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/yetone/avante.nvim/tests.yaml?style=flat-square&logo=lua&logoColor=c7c7c7&label=Lua+CI&labelColor=1E40AF&color=347D39&event=push" alt="Lua CI status" /></a>
   <a href="https://github.com/yetone/avante.nvim/actions/workflows/rust.yaml" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/yetone/avante.nvim/rust.yaml?style=flat-square&logo=rust&logoColor=ffffff&label=Rust+CI&labelColor=BC826A&color=347D39&event=push" alt="Rust CI status" /></a>
   <a href="https://github.com/yetone/avante.nvim/actions/workflows/pre-commit.yaml" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/yetone/avante.nvim/pre-commit.yaml?style=flat-square&logo=pre-commit&logoColor=ffffff&label=pre-commit&labelColor=FAAF3F&color=347D39&event=push" alt="pre-commit status" /></a>
   <a href="https://discord.gg/QfnEFEdSjz" target="_blank"><img src="https://img.shields.io/discord/1302530866362323016?style=flat-square&logo=discord&label=Discord&logoColor=ffffff&labelColor=7376CF&color=268165" alt="Discord" /></a>
@@ -354,7 +354,7 @@ programs.neovim = {
       type = "lua";
       config = ''
               require("avante").setup()
-      '' # or builtins.readFile ./plugins/avante.lua;
+      ''; # or builtins.readFile ./plugins/avante.lua
     }
   ];
 };
@@ -1347,7 +1347,9 @@ Avante provides a RAG service, which is a tool for obtaining the required contex
       endpoint = "https://api.openai.com/v1", -- Embedding API endpoint
       api_key = "OPENAI_API_KEY", -- Environment variable name for the embedding API key
       model = "text-embedding-3-large", -- Embedding model name
-      extra = nil, -- Additional configuration options for the embedding model
+      extra = {
+        max_embedding_tokens = 512, -- Maximum tokens per chunk sent to the embedding model
+      },
     },
     docker_extra_args = "", -- Extra arguments to pass to the docker command
   },

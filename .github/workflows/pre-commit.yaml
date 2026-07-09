@@ -11,7 +11,7 @@ jobs:
     if: "github.event.action != 'labeled' || github.event.label.name == 'pre-commit ci run'"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - run: gh pr edit ${{ github.event.number }} --remove-label 'pre-commit ci run'
       if: github.event.action == 'labeled' && github.event.label.name == 'pre-commit ci run'
       env:
@@ -24,7 +24,8 @@ jobs:
     - run: |
         uv venv
         source .venv/bin/activate
-        uv pip install -r py/rag-service/requirements.txt
+        # uv build
+        uv pip install py/rag-service
     - uses: leafo/gh-actions-lua@v13
       with:
         luaVersion: "5.1.5"

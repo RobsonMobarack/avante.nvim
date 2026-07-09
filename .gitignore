@@ -20,10 +20,14 @@ Thumbs.db
 .vscode/
 .idea/
 doc/tags
+tags-*
 
 # Dependency manager generated directories
 /lua_modules/
 /.luarocks/
+py/rag-service/dist
+py/rag-service/dist
+py/rag-service/src/rag_service.egg-info/
 
 # Log files
 *.log
@@ -37,7 +41,7 @@ temp/
 .envrc
 
 # If you use any build tools, you might need to ignore build output directories
-build/
+/build/
 dist/
 
 # If you use any test frameworks, you might need to ignore test coverage reports
@@ -49,3 +53,4 @@ config.personal.lua
 # create by avante
 /lua/.tag
 target
+/result
