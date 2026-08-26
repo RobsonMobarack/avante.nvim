@@ -1,6 +1,10 @@
+---@mod avante-api Avante API
+---
+---@brief [[
+---A collection of functions to build your own avante experience.
+---@brief ]]
 local Config = require("avante.config")
 local Utils = require("avante.utils")
-local PromptInput = require("avante.ui.prompt_input")
 
 ---@class avante.ApiToggle
 ---@operator call(): boolean
@@ -84,25 +88,25 @@ function M.build(opts)
     error("Unsupported operating system: " .. os_name, 2)
   end
 
-  ---@type integer
-  local pid
-  local exit_code = { 0 }
-
   Utils.info("Starting command " .. table.concat(cmd, " "))
   local ok, job_or_err = pcall(vim.system, cmd, { text = true }, function(obj)
-    local stderr = obj.stderr and vim.split(obj.stderr, "\n") or {}
-    local stdout = obj.stdout and vim.split(obj.stdout, "\n") or {}
-    if vim.tbl_contains(exit_code, obj.code) then
-      local output = stdout
-      if #output == 0 then
-        table.insert(output, "")
-        Utils.debug("build output:", output)
-      else
-        Utils.error("build error:", stderr)
-      end
+    -- local stderr = obj.stderr and vim.split(obj.stderr, "\n") or {}
+    -- local stdout = obj.stdout and vim.split(obj.stdout, "\n") or {}
+    -- vim.print(stdout)
+    if obj.code == 0 then
+      local output = obj.stdout
+
+      -- if #output == 0 then
+      --   table.insert(output, "")
+      Utils.debug({ "build output:", output })
+      -- end
+    else
+      local stderr = obj.stderr
+      -- vim.list_extend(
+      Utils.error({ "build error:", stderr })
     end
   end)
-  if not ok then Utils.error("Failed to build the command: " .. cmd .. "\n" .. job_or_err, { once = true }) end
+  if not ok then Utils.error("Failed to run the build command: " .. cmd .. "\n" .. job_or_err, { once = true }) end
 
   return job_or_err:wait()
 end
@@ -172,6 +176,7 @@ function M.ask(opts)
   end
 
   if opts.floating == true or (Config.windows.ask.floating == true and not has_question and opts.floating == nil) then
+    local PromptInput = require("avante.ui.prompt_input")
     local prompt_input = PromptInput:new({
       submit_callback = function(input) ask(input) end,
       close_on_submit = true,
@@ -258,6 +263,8 @@ function M.focus(opts)
   end
 end
 
+---Select a model
+---Saves the choice to stdpath("state")
 function M.select_model() require("avante.model_selector").open() end
 
 function M.select_acp_model() require("avante.acp_config_selector").open_model() end
@@ -327,6 +334,7 @@ end
 
 function M.stop() require("avante.llm").cancel_inflight_request() end
 
+---@export M
 return setmetatable(M, {
   __index = function(t, k)
     local module = require("avante")

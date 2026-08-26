@@ -1,3 +1,24 @@
+---@mod avante-providers Model providers
+---@brief [[
+--- Avante ships with default providers and supports custom providers.
+---
+--- Common provider names include:
+---
+--- - `claude`
+--- - `openai`
+--- - `azure`
+--- - `gemini`
+--- - `vertex`
+--- - `cohere`
+--- - `copilot`
+--- - `bedrock`
+--- - `ollama`
+--- - `watsonx_code_assistant`
+--- - `mistral`
+--- - ...
+--- Please refer to the provider's help section under the tag avante-providers-NAME
+---@brief ]]
+
 local api = vim.api
 
 local Config = require("avante.config")
@@ -237,6 +258,8 @@ function M.refresh(provider_name)
     local p = M[Config.provider]
     E.setup({ provider = p, refresh = true })
   end
+  local sidebar = require("avante").get()
+  if sidebar and sidebar:is_open() then sidebar:render_result() end
   Utils.info("Switch to provider: " .. provider_name, { once = true, title = "Avante" })
 end
 

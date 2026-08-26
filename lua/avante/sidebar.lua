@@ -1,13 +1,13 @@
----@mod avante-sidebar avante sidebar
+---@mod avante-sidebar Sidebar
 ---@brief [[
 --- The 'sidebar' is made of several containers, each with its own 'Avante*' filetype that you can use to customize its behavior, e.g. "AvanteInput", "AvanteResult"...
 ---
---- Keymaps~
+--- Keymaps
 ---
 --- Default keymaps are installed when `behaviour.auto_set_keymaps` is enabled.
 --- If a mapping already exists, Avante leaves it to the user to configure.
 ---
---- Sidebar~
+--- Sidebar
 ---
 ---                                             *avante-sidebar-keymaps*
 --- `A`             Apply all
@@ -77,20 +77,15 @@ local PPath = require("plenary.path")
 local Providers = require("avante.providers")
 local Path = require("avante.path")
 local Config = require("avante.config")
-local Diff = require("avante.diff")
 local Llm = require("avante.llm")
 local Utils = require("avante.utils")
 local PromptLogger = require("avante.utils.promptLogger")
 local Highlights = require("avante.highlights")
-local RepoMap = require("avante.repo_map")
 local FileSelector = require("avante.file_selector")
-local LLMTools = require("avante.llm_tools")
 local History = require("avante.history")
 local Render = require("avante.history.render")
 local Line = require("avante.ui.line")
 local LRUCache = require("avante.utils.lru_cache")
-local logo = require("avante.utils.logo")
-local ButtonGroupLine = require("avante.ui.button_group_line")
 
 local RESULT_BUF_NAME = "AVANTE_RESULT"
 local VIEW_BUFFER_UPDATED_PATTERN = "AvanteViewBufferUpdated"
@@ -118,6 +113,10 @@ local SIDEBAR_CONTAINERS = {
 }
 
 ---@class avante.Sidebar
+--- This is avante's main view, a vertical column of several windows, most of the time:
+--- 1. the result
+--- 2. selected code
+--- 3. user input
 ---@field id integer
 ---@field augroup integer
 ---@field code avante.CodeState
@@ -902,7 +901,7 @@ local function minimize_snippet(original_lines, snippet)
   local snippet_content = snippet.content
   local snippet_lines = vim.split(snippet_content, "\n")
   ---@diagnostic disable-next-line: assign-type-mismatch
-  local patch = vim.diff( ---@type integer[][]
+  local patch = vim.text.diff( ---@type integer[][]
     original_snippet_content,
     snippet_content,
     ---@diagnostic disable-next-line: missing-fields
@@ -979,6 +978,7 @@ function Sidebar:handle_expand_message(message_uuid, expanded)
   end, 100)
 end
 
+---@private
 function Sidebar:edit_user_request()
   local block = self:get_current_user_request_block()
   if not block then return end
@@ -992,6 +992,7 @@ function Sidebar:edit_user_request()
 end
 
 ---@param current_cursor boolean
+---@private
 function Sidebar:apply(current_cursor)
   local response, response_start_line = self:get_content_between_separators()
   local all_snippets_map = extract_code_snippets_map(response)
@@ -1016,6 +1017,7 @@ function Sidebar:apply(current_cursor)
   end
 
   vim.defer_fn(function()
+    local Diff = require("avante.diff")
     api.nvim_set_current_win(self.code.winid)
     for filepath, snippets in pairs(selected_snippets_map) do
       if Config.behaviour.minimize_diff then snippets = self:minimize_snippets(filepath, snippets) end
@@ -1080,6 +1082,12 @@ local base_win_options = {
   statusline = vim.o.laststatus == 0 and " " or "",
 }
 
+---Sets 'winbar' for any sidebar container
+---If `windows.sidebar_header.include_model` is set, the bar will show the currently selected model
+---@param header_text string Leftmost default string
+---@param opts table?
+---When include_model is set, in ACP mode, model will be rendered as "model | mode"
+---else it will be set as
 function Sidebar:render_header(winid, bufnr, header_text, hl, reverse_hl, opts)
   opts = vim.tbl_extend("force", { include_model = false }, opts or {})
   if not Config.windows.sidebar_header.enabled then return end
@@ -1134,6 +1142,7 @@ function Sidebar:render_header(winid, bufnr, header_text, hl, reverse_hl, opts)
   api.nvim_set_option_value("winbar", winbar_text, { win = winid })
 end
 
+--- @see render_header
 function Sidebar:render_result()
   if not Utils.is_valid_container(self.containers.result) then return end
   local header_text = Utils.icon("󰭻 ") .. "Avante"
@@ -1178,6 +1187,7 @@ function Sidebar:render_input(ask)
   )
 end
 
+---@private
 function Sidebar:render_selected_code()
   if not self.code.selection then return end
   if not Utils.is_valid_container(self.containers.selected_code) then return end
@@ -1198,6 +1208,7 @@ function Sidebar:render_selected_code()
   )
 end
 
+---@private
 function Sidebar:bind_apply_key()
   if self.containers.result then
     vim.keymap.set(
@@ -1209,12 +1220,14 @@ function Sidebar:bind_apply_key()
   end
 end
 
+---@private
 function Sidebar:unbind_apply_key()
   if self.containers.result then
     pcall(vim.keymap.del, "n", Config.mappings.sidebar.apply_cursor, { buffer = self.containers.result.bufnr })
   end
 end
 
+---@private
 function Sidebar:bind_retry_user_request_key()
   if self.containers.result then
     vim.keymap.set(
@@ -1226,6 +1239,7 @@ function Sidebar:bind_retry_user_request_key()
   end
 end
 
+---@private
 function Sidebar:unbind_retry_user_request_key()
   if self.containers.result then
     pcall(vim.keymap.del, "n", Config.mappings.sidebar.retry_user_request, { buffer = self.containers.result.bufnr })
@@ -1723,6 +1737,7 @@ function Sidebar:resize()
 end
 
 function Sidebar:render_logo()
+  local logo = require("avante.utils.logo")
   local logo_lines = vim.split(logo, "\n")
   local max_width = 30
   --- get editor width
@@ -2065,6 +2080,7 @@ function Sidebar:get_message_lines(ctx, message, messages, ignore_record_prefix)
   if message.state == "generating" or message.is_calling then
     local lines = self:_get_message_lines(ctx, message, messages, ignore_record_prefix)
     if self.permission_handler and self.permission_button_options then
+      local ButtonGroupLine = require("avante.ui.button_group_line")
       local button_group_line = ButtonGroupLine:new(self.permission_button_options, {
         on_click = self.permission_handler,
         group_label = "Waiting for Confirmation... ",
@@ -2701,7 +2717,10 @@ function Sidebar:get_generate_prompts_options(request, cb)
   local mentions = Utils.extract_mentions(request)
   request = mentions.new_content
 
-  local project_context = mentions.enable_project_context and file_ext and RepoMap.get_repo_map(file_ext) or nil
+  local project_context = mentions.enable_project_context
+      and file_ext
+      and require("avante.repo_map").get_repo_map(file_ext)
+    or nil
 
   local diagnostics = nil
   if mentions.enable_diagnostics then
@@ -2714,6 +2733,7 @@ function Sidebar:get_generate_prompts_options(request, cb)
 
   local history_messages = self:get_history_messages_for_api()
 
+  local LLMTools = require("avante.llm_tools")
   local tools = vim.deepcopy(LLMTools.get_tools(request, history_messages))
   table.insert(tools, {
     name = "add_file_to_context",

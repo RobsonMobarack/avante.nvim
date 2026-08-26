@@ -1,6 +1,6 @@
-if vim.fn.has("nvim-0.11") == 0 then
+if vim.fn.has("nvim-0.12") == 0 then
   vim.api.nvim_echo({
-    { "Avante requires at least nvim-0.11", "ErrorMsg" },
+    { "Avante requires at least nvim-0.12", "ErrorMsg" },
     { "Please upgrade your neovim version", "WarningMsg" },
     { "Press any key to exit", "ErrorMsg" },
   }, true, {})
@@ -13,7 +13,6 @@ if vim.g.avante_loaded ~= nil then return end
 vim.g.avante_loaded = 1
 
 --- NOTE: We will override vim.paste if img-clip.nvim is available to work with avante.nvim internal logic paste
-local Clipboard = require("avante.clipboard")
 local Config = require("avante.config")
 local Utils = require("avante.utils")
 local P = require("avante.path")
@@ -24,6 +23,7 @@ if Config.support_paste_image() then
     ---@param lines string[]
     ---@param phase -1|1|2|3
     return function(lines, phase)
+      local Clipboard = require("avante.clipboard")
       -- NOTE: require("img-clip.util").verbose = false does NOT silence warnings
       -- because img-clip's warn() reads config.get_opt("verbose"), not util.verbose.
       -- Suppress via api_opts which has highest priority in img-clip's config lookup.

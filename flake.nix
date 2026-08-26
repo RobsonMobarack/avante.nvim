@@ -2,7 +2,7 @@
   description = "Development shell for avante.nvim";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs?rev=28ace32529a63842e4f8103e4f9b24960cf6c23a";
+    nixpkgs.url = "github:NixOS/nixpkgs?rev=62e3050a29278c985725a86704faa1e99236b51a";
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -150,16 +150,16 @@
             name = "avante";
 
             packages = with pkgs; [
+              rustfmt
               lua5_1.pkgs.luacheck
               lua-language-server
               ripgrep
               python313
-              # yq # brings python3.12 in scope :'(
-              silver-searcher
+              silver-searcher # for tests
               docker
               stylua
               mylua
-              vimcats
+              vimcats  # to generate docs
               pre-commit
             ];
 
@@ -172,7 +172,10 @@
         in
         {
           default = basic.overrideAttrs(oa: {
-            buildInputs = [
+            buildInputs = with pkgs; [
+              cargo
+              rustc
+              ratchet # to upgrade github actions
               pkgs.pyright # to be able to run pre-commit tests
               pkgs.ruff # to be able to run pre-commit tests
               pkgs.gcc # to build python deps

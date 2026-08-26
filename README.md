@@ -4,7 +4,7 @@
 </div>
 
 <p align="center">
-  <a href="https://neovim.io/" target="_blank"><img src="https://img.shields.io/static/v1?style=flat-square&label=Neovim&message=v0.10%2b&logo=neovim&labelColor=282828&logoColor=8faa80&color=414b32" alt="Neovim: v0.10+" /></a>
+  <a href="https://neovim.io/" target="_blank"><img src="https://img.shields.io/static/v1?style=flat-square&label=Neovim&message=v0.12%2b&logo=neovim&labelColor=282828&logoColor=8faa80&color=414b32" alt="Neovim: v0.12+" /></a>
   <a href="https://github.com/yetone/avante.nvim/actions/workflows/tests.yaml" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/yetone/avante.nvim/tests.yaml?style=flat-square&logo=lua&logoColor=c7c7c7&label=Lua+CI&labelColor=1E40AF&color=347D39&event=push" alt="Lua CI status" /></a>
   <a href="https://github.com/yetone/avante.nvim/actions/workflows/rust.yaml" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/yetone/avante.nvim/rust.yaml?style=flat-square&logo=rust&logoColor=ffffff&label=Rust+CI&labelColor=BC826A&color=347D39&event=push" alt="Rust CI status" /></a>
   <a href="https://github.com/yetone/avante.nvim/actions/workflows/pre-commit.yaml" target="_blank"><img src="https://img.shields.io/github/actions/workflow/status/yetone/avante.nvim/pre-commit.yaml?style=flat-square&logo=pre-commit&logoColor=ffffff&label=pre-commit&labelColor=FAAF3F&color=347D39&event=push" alt="pre-commit status" /></a>
@@ -38,15 +38,9 @@ If you like this project, please consider supporting me on Patreon, as it helps 
 
 ## Avante Zen Mode
 
-Due to the prevalence of claude code, it is clear that this is an era of Coding Agent CLIs. As a result, there are many arguments like: in the Vibe Coding era, editors are no longer needed; you only need to use the CLI in the terminal. But have people realized that for more than half a century, Terminal-based Editors have solved and standardized the biggest problem with Terminal-based applications — that is, the awkward TUI interactions! No matter how much these Coding Agent CLIs optimize their UI/UX, their UI/UX will always be a subset of Terminal-based Editors (Vim, Emacs)! They cannot achieve Vim’s elegant action + text objects abstraction (imagine how you usually edit large multi-line prompts in an Agent CLI), nor can they leverage thousands of mature Vim/Neovim plugins to help optimize TUI UI/UX—such as easymotions and so on. Moreover, when they want to view or modify code, they often have to jump into other applications which forcibly interrupts the UI/UX experience.
+It is possible to launch avante such that it looks like a typical Vibe Coding Agent CLI but while being completely Neovim underneath. So you can use your muscle-memory Vim operations and those rich and mature Neovim plugins on it. At the same time, by leveraging [ACP](https://github.com/yetone/avante.nvim#acp-support) it has all capabilities of claude code / gemini-cli / codex! Why not enjoy both?
 
-Therefore, Avante’s Zen Mode was born! It looks like a Vibe Coding Agent CLI but it is completely Neovim underneath. So you can use your muscle-memory Vim operations and those rich and mature Neovim plugins on it. At the same time, by leveraging [ACP](https://github.com/yetone/avante.nvim#acp-support) it has all capabilities of claude code / gemini-cli / codex! Why not enjoy both?
-
-Now all you need to do is alias this command to avante; then every time you simply type avante just like using claude code and enter Avante’s Zen Mode!
-
-```bash
-alias avante='nvim -c "lua vim.defer_fn(function()require(\"avante.api\").zen_mode()end, 100)"'
-```
+Now all you need to do is install [./contrib/avante] in your PATH (or create the equivalent alias); then every time you simply type avante just like using claude code and enter Avante’s Zen Mode!
 
 The effect is as follows:
 
@@ -196,7 +190,6 @@ For building binary if you wish to build from source, then `cargo` is required. 
     "nvim-telescope/telescope.nvim", -- for file_selector provider telescope
     "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
     "ibhagwan/fzf-lua", -- for file_selector provider fzf
-    "stevearc/dressing.nvim", -- for input provider dressing
     "folke/snacks.nvim", -- for input provider snacks
     "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
     "zbirenbaum/copilot.lua", -- for providers='copilot'
@@ -233,6 +226,51 @@ For building binary if you wish to build from source, then `cargo` is required. 
 
 <details>
 
+  <summary><a href="https://neovim.io/doc/user/pack/">Pack</a></summary>
+
+Pack is an out-of-the-box plugin manager since Neovim v0.12.
+
+```lua
+vim.api.nvim_create_autocmd(
+  'PackChanged',
+  {
+    callback = function(ev)
+      local name, kind = ev.data.spec.name, ev.data.kind
+      if name == 'avante.nvim' and (kind == 'install' or kind == 'update') then
+        -- Use `./build.sh` to use prebuilt libraries
+        vim.system({ 'make' }, { cwd = ev.data.path }):wait()
+      end
+    end
+  }
+)
+
+vim.pack.add({
+  {
+    src='https://github.com/yetone/avante.nvim',
+    version='main'  -- default
+  },
+
+  -- Deps
+  'https://github.com/nvim-lua/plenary.nvim',
+  'https://github.com/MunifTanjim/nui.nvim',
+
+  -- Optional deps
+  'https://github.com/MeanderingProgrammer/render-markdown.nvim',
+  'https://github.com/hrsh7th/nvim-cmp',
+  'https://github.com/nvim-tree/nvim-web-devicons', -- or 'echasnovski/mini.icons'
+  'https://github.com/HakonHarnes/img-clip.nvim',
+  'https://github.com/zbirenbaum/copilot.lua',
+  'https://github.com/folke/snacks.nvim', -- for modern input UI
+})
+
+-- Config customizations
+require('avante').setup({})
+```
+
+</details>
+
+<details>
+
   <summary><a href="https://github.com/lumen-oss/rocks.nvim">rocks.nvim</a></summary>
 
 Run `:Rocks install avante.nvim` then add to your init.lua:
@@ -261,7 +299,6 @@ Plug 'hrsh7th/nvim-cmp'
 Plug 'nvim-tree/nvim-web-devicons' "or Plug 'echasnovski/mini.icons'
 Plug 'HakonHarnes/img-clip.nvim'
 Plug 'zbirenbaum/copilot.lua'
-Plug 'stevearc/dressing.nvim' " for enhanced input UI
 Plug 'folke/snacks.nvim' " for modern input UI
 
 " Yay, pass source=true if you want to build from source
@@ -306,38 +343,6 @@ later(function()
   require("copilot").setup({...}) -- setup copilot to your liking
   require("avante").setup({...}) -- config for avante.nvim
 end)
-```
-
-</details>
-
-<details>
-
-  <summary><a href="https://github.com/wbthomason/packer.nvim">Packer</a></summary>
-
-```vim
-
-  -- Required plugins
-  use 'nvim-lua/plenary.nvim'
-  use 'MunifTanjim/nui.nvim'
-  use 'MeanderingProgrammer/render-markdown.nvim'
-
-  -- Optional dependencies
-  use 'hrsh7th/nvim-cmp'
-  use 'nvim-tree/nvim-web-devicons' -- or use 'echasnovski/mini.icons'
-  use 'HakonHarnes/img-clip.nvim'
-  use 'zbirenbaum/copilot.lua'
-  use 'stevearc/dressing.nvim' -- for enhanced input UI
-  use 'folke/snacks.nvim' -- for modern input UI
-
-  -- Avante.nvim with build process
-  use {
-    'yetone/avante.nvim',
-    branch = 'main',
-    run = 'make',
-    config = function()
-      require('avante').setup()
-    end
-  }
 ```
 
 </details>
@@ -396,7 +401,7 @@ require('render-markdown').setup ({
 require('avante').setup({
   -- Example: Using snacks.nvim as input provider
   input = {
-    provider = "snacks", -- "native" | "dressing" | "snacks"
+    provider = "snacks", -- "native" | "snacks"
     provider_opts = {
       -- Snacks input configuration
       title = "Avante Input",
@@ -686,29 +691,6 @@ Avante.nvim supports multiple input providers for user input (like API key entry
     provider_opts = {},
   }
 }
-```
-
-</details>
-
-<details>
-  <summary>Dressing.nvim Input Provider</summary>
-
-For enhanced input UI with better styling and features:
-
-```lua
-{
-  input = {
-    provider = "dressing",
-    provider_opts = {},
-  }
-}
-```
-
-You'll need to install dressing.nvim:
-
-```lua
--- With lazy.nvim
-{ "stevearc/dressing.nvim" }
 ```
 
 </details>
@@ -1211,120 +1193,8 @@ providers = {
 
 Avante.nvim now supports the [Agent Client Protocol (ACP)](https://agentclientprotocol.com/overview/introduction), enabling seamless integration with AI agents that follow this standardized communication protocol. ACP provides a unified way for AI agents to interact with development environments, offering enhanced capabilities for code editing, file operations, and tool execution.
 
-### What is ACP?
-
-The Agent Client Protocol (ACP) is a standardized protocol that enables AI agents to communicate with development tools and environments. It provides:
-
-- **Standardized Communication**: A unified JSON-RPC based protocol for agent-client interactions
-- **Tool Integration**: Support for various development tools like file operations, code execution, and search
-- **Session Management**: Persistent sessions that maintain context across interactions
-- **Permission System**: Granular control over what agents can access and modify
-
-### Enabling ACP
-
-To use ACP-compatible agents with Avante.nvim, you need to configure an ACP provider. Here are the currently supported ACP agents:
-
-#### Gemini CLI with ACP
-```lua
-{
-  provider = "gemini-cli",
-  -- other configuration options...
-}
-```
-
-#### Claude Code with ACP
-```lua
-{
-  provider = "claude-code",
-  -- other configuration options...
-}
-```
-
-#### Goose with ACP
-```lua
-{
-  provider = "goose",
-  -- other configuration options...
-}
-```
-
-#### Codex with ACP
-```lua
-{
-  provider = "codex",
-  -- other configuration options...
-}
-```
-
-#### Kimi CLI with ACP
-```lua
-{
-  provider = "kimi-cli",
-  -- other configuration options...
-}
-```
-
-### ACP Configuration
-
-ACP providers are configured in the `acp_providers` section of your configuration:
-
-```lua
-{
-  acp_providers = {
-    ["gemini-cli"] = {
-      command = "gemini",
-      args = { "--experimental-acp" },
-      env = {
-        NODE_NO_WARNINGS = "1",
-        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY"),
-      },
-    },
-    ["claude-code"] = {
-      command = "claude-agent-acp",
-      args = { },
-      env = {
-        NODE_NO_WARNINGS = "1",
-        ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY"),
-      },
-    },
-    ["goose"] = {
-      command = "goose",
-      args = { "acp" },
-    },
-    ["codex"] = {
-      command = "codex-acp",
-      args = {},
-      env = {
-        NODE_NO_WARNINGS = "1",
-        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY"),
-      },
-    },
-  },
-  -- other configuration options...
-}
-```
-
-### Prerequisites
-
-Before using ACP agents, ensure you have the required tools installed:
-
-- **For Gemini CLI**: Install the `gemini` CLI tool and set your `GEMINI_API_KEY`
-- **For Claude Code**: Install the `acp-claude-code` package via npm and set your `ANTHROPIC_API_KEY`
-
-### ACP vs Traditional Providers
-
-ACP providers offer several advantages over traditional API-based providers:
-
-- **Enhanced Tool Access**: Agents can directly interact with your file system, run commands, and access development tools
-- **Persistent Context**: Sessions maintain state across multiple interactions
-- **Fine-grained Permissions**: Control exactly what agents can access and modify
-- **Standardized Protocol**: Compatible with any ACP-compliant agent
-
-## Custom providers
-
-Avante provides a set of default providers, but users can also create their own providers.
-
-For more information, see [Custom Providers](https://github.com/yetone/avante.nvim/wiki/Custom-providers)
+Avante provides a set of default providers (codex, gemini, claude-code,...), but users can also create their own providers. Providers are configured in the `acp_providers` section of your configuration:
+See `:h avante-acp` and [Custom Providers](https://github.com/yetone/avante.nvim/wiki/Custom-providers) for more information.
 
 ## RAG Service
 
@@ -1441,54 +1311,8 @@ Tool list
 
 ## Custom Tools
 
-Avante allows you to define custom tools that can be used by the AI during code generation and analysis. These tools can execute shell commands, run scripts, or perform any custom logic you need.
+See `:h avante-custom-tools`.
 
-### Example: Go Test Runner
-
-<details>
-<summary>Here's an example of a custom tool that runs Go unit tests:</summary>
-
-```lua
-{
-  custom_tools = {
-    {
-      name = "run_go_tests",  -- Unique name for the tool
-      description = "Run Go unit tests and return results",  -- Description shown to AI
-      command = "go test -v ./...",  -- Shell command to execute
-      param = {  -- Input parameters (optional)
-        type = "table",
-        fields = {
-          {
-            name = "target",
-            description = "Package or directory to test (e.g. './pkg/...' or './internal/pkg')",
-            type = "string",
-            optional = true,
-          },
-        },
-      },
-      returns = {  -- Expected return values
-        {
-          name = "result",
-          description = "Result of the fetch",
-          type = "string",
-        },
-        {
-          name = "error",
-          description = "Error message if the fetch was not successful",
-          type = "string",
-          optional = true,
-        },
-      },
-      func = function(params, on_log, on_complete)  -- Custom function to execute
-        local target = params.target or "./..."
-        return vim.system({ "go", "test", "-v", target }, { text = true }):wait().stdout
-      end,
-    },
-  },
-}
-```
-
-</details>
 
 ## MCP
 
@@ -1591,42 +1415,9 @@ If you have the following structure:
 >
 > `*.avanterules` is a jinja template file, in which will be rendered using [minijinja](https://github.com/mitsuhiko/minijinja). See [templates](https://github.com/yetone/avante.nvim/blob/main/lua/avante/templates) for example on how to extend current templates.
 
-## Integration
+## Integrations
 
-Avante.nvim can be extended to work with other plugins by using its extension modules. Below is an example of integrating Avante with [`nvim-tree`](https://github.com/nvim-tree/nvim-tree.lua), allowing you to select or deselect files directly from the NvimTree UI:
-
-```lua
-{
-    "yetone/avante.nvim",
-    event = "VeryLazy",
-    keys = {
-        {
-            "<leader>a+",
-            function()
-                local tree_ext = require("avante.extensions.nvim_tree")
-                tree_ext.add_file()
-            end,
-            desc = "Select file in NvimTree",
-            ft = "NvimTree",
-        },
-        {
-            "<leader>a-",
-            function()
-                local tree_ext = require("avante.extensions.nvim_tree")
-                tree_ext.remove_file()
-            end,
-            desc = "Deselect file in NvimTree",
-            ft = "NvimTree",
-        },
-    },
-    opts = {
-        --- other configurations
-        selector = {
-            exclude_auto_select = { "NvimTree" },
-        },
-    },
-}
-```
+Avante.nvim can be extended to work with other plugins by using its extension modules. For instance with [`nvim-tree`](https://github.com/nvim-tree/nvim-tree.lua), see [the wiki](https://github.com/yetone/avante.nvim/wiki/plugin%E2%80%90integrations).
 
 ## TODOs
 
@@ -1692,7 +1483,7 @@ You can also disable specific tools while keeping agentic mode enabled by config
 
 Contributions to avante.nvim are welcome! If you're interested in helping out, please feel free to submit pull requests or open issues.
 
-See [wiki](https://github.com/yetone/avante.nvim/wiki) for more recipes and tricks.
+See [wiki](https://github.com/yetone/avante.nvim/wiki) for more recipes and tricks and [./CONTRIBUTING.md] to setup a local development environment.
 
 ## Acknowledgments
 
@@ -1704,7 +1495,6 @@ We would like to express our heartfelt gratitude to the contributors of the foll
 | [ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim)              | Apache 2.0 License | Calculation of tokens count   | [lua/avante/utils/tokens.lua](https://github.com/yetone/avante.nvim/blob/main/lua/avante/utils/tokens.lua)                             |
 | [img-clip.nvim](https://github.com/HakonHarnes/img-clip.nvim)         | MIT License        | Clipboard image support       | [lua/avante/clipboard.lua](https://github.com/yetone/avante.nvim/blob/main/lua/avante/clipboard.lua)                                   |
 | [copilot.lua](https://github.com/zbirenbaum/copilot.lua)              | MIT License        | Copilot support               | [lua/avante/providers/copilot.lua](https://github.com/yetone/avante.nvim/blob/main/lua/avante/providers/copilot.lua)                   |
-| [jinja.vim](https://github.com/HiPhish/jinja.vim)                     | MIT License        | Template filetype support     | [syntax/jinja.vim](https://github.com/yetone/avante.nvim/blob/main/syntax/jinja.vim)                                                   |
 | [codecompanion.nvim](https://github.com/olimorris/codecompanion.nvim) | MIT License        | Secrets logic support         | [lua/avante/providers/init.lua](https://github.com/yetone/avante.nvim/blob/main/lua/avante/providers/init.lua)                         |
 | [aider](https://github.com/paul-gauthier/aider)                       | Apache 2.0 License | Planning mode user prompt     | [lua/avante/templates/planning.avanterules](https://github.com/yetone/avante.nvim/blob/main/lua/avante/templates/planning.avanterules) |
 
@@ -1740,10 +1530,10 @@ avante.nvim is licensed under the Apache 2.0 License. For more details, please r
 # Star History
 
 <p align="center">
-  <a target="_blank" href="https://star-history.com/#yetone/avante.nvim&Date">
+  <a target="_blank" href="https://star-history.dera.page/#yetone/avante.nvim&Date">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=yetone/avante.nvim&type=Date&theme=dark">
-      <img alt="NebulaGraph Data Intelligence Suite(ngdi)" src="https://api.star-history.com/svg?repos=yetone/avante.nvim&type=Date">
+      <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=yetone/avante.nvim&type=Date&theme=dark">
+      <img alt="NebulaGraph Data Intelligence Suite(ngdi)" src="https://star-history.dera.page/svg?repos=yetone/avante.nvim&type=Date">
     </picture>
   </a>
 </p>

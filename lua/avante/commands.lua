@@ -1,8 +1,8 @@
----@mod avante-commands avante commands
+---@mod avante-commands Commands (:AvanteAsk,...)
 ---
 ---@brief [[
 ---
---- Commands~
+--- Commands
 ---
 ---                                                     *:AvanteAsk*
 --- :AvanteAsk [question] [position=left|right|top|bottom] [ask=true|false]
@@ -69,7 +69,7 @@
 ---
 ---                                                     *:AvanteModels*
 --- :AvanteModels
----         Show the model list.
+---         Show the model list. See |avante-api.select_model|
 ---
 ---                                                     *:AvanteACPModels*
 --- :AvanteACPModels

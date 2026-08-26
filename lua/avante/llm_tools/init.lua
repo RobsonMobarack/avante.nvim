@@ -1,37 +1,9 @@
----@mod avante-tools avante tools
+---@mod avante-custom-tools Custom tools
 ---@brief [[
----
---- Agentic mode enables tool use. If a model does not support tools, disable
---- them for that provider:
---->
----   require("avante").setup({
----     providers = {
----       claude = {
----         disable_tools = true,
----       },
----     },
----   })
----<
----
---- Disable selected tools only:
---->
----   require("avante").setup({
----     disabled_tools = { "python" },
----   })
----<
----
---- Built-in tool names include:
---->
----   rag_search, python, git_diff, git_commit, glob, search_keyword,
----   read_file_toplevel_symbols, read_file, create_file, move_path, copy_path,
----   delete_path, create_dir, bash, web_search, fetch
----<
----
---- Custom tools~
----
---- Custom tools can run shell commands, scripts, or Lua functions:
---->
----   require("avante").setup({
+---Custom tools can run shell commands, scripts, or Lua functions
+---Here's an example of a custom tool that runs Go unit tests:
+---<lua
+---   vim.g.avante = {
 ---     custom_tools = {
 ---       {
 ---         name = "run_go_tests",
@@ -60,16 +32,41 @@
 ---         end,
 ---       },
 ---     },
+---   }
+--->
+---@brief ]]
+---
+---@mod avante-tools avante tools
+---@brief [[
+---
+--- Agentic mode enables tool use. If a model does not support tools, disable
+--- them for that provider:
+--->
+---   require("avante").setup({
+---     providers = {
+---       claude = {
+---         disable_tools = true,
+---       },
+---     },
 ---   })
+---<
+---
+---
+---@brief ]]
+---@tag avante-tools-builtins
+---@brief [[
+--- Built-in tool names include:
+--->
+---   rag_search, python, git_diff, git_commit, glob, search_keyword,
+---   read_file_toplevel_symbols, read_file, create_file, move_path, copy_path,
+---   delete_path, create_dir, bash, web_search, fetch
 ---<
 ---
 ---@brief ]]
 
-local curl = require("plenary.curl")
 local Utils = require("avante.utils")
 local Path = require("plenary.path")
 local Config = require("avante.config")
-local RagService = require("avante.rag_service")
 local Helpers = require("avante.llm_tools.helpers")
 
 local M = {}
@@ -283,8 +280,29 @@ function M.create_dir(input, opts)
   end, nil, opts.session_ctx, "create_dir")
 end
 
+---@tag avante-web-search
+---@brief [[
+---<
+---  vim.g.avante = {
+---    web_search_engine = {
+---      provider = "tavily",
+---      proxy = nil,
+---    },
+---  }
+--->
+---
+--- Supported providers and environment variables:
+---
+--- - Tavily: `TAVILY_API_KEY`
+--- - SerpApi: `SERPAPI_API_KEY`
+--- - Google: `GOOGLE_SEARCH_API_KEY` and `GOOGLE_SEARCH_ENGINE_ID`
+--- - Kagi: `KAGI_API_KEY`
+--- - Brave Search: `BRAVE_API_KEY`
+--- - SearXNG: `SEARXNG_API_URL`
+---@brief ]]
 ---@type AvanteLLMToolFunc<{ query: string }>
 function M.web_search(input, opts)
+  local curl = require("plenary.curl")
   local on_log = opts.on_log
   local provider_type = Config.web_search_engine.provider
   local proxy = Config.web_search_engine.proxy
@@ -598,6 +616,7 @@ function M.rag_search(input, opts)
   local root = Utils.get_project_root()
   local uri = "file://" .. root
   if uri:sub(-1) ~= "/" then uri = uri .. "/" end
+  local RagService = require("avante.rag_service")
   RagService.retrieve(
     uri,
     input.query,
@@ -612,6 +631,8 @@ function M.rag_search(input, opts)
 end
 
 ---@type AvanteLLMToolFunc<{ code: string, path: string, container_image?: string }>
+---Runs python code via docker.
+---Default container is python:3.14-slim-bookworm
 function M.python(input, opts)
   local on_log = opts.on_log
   local on_complete = opts.on_complete
@@ -620,7 +641,7 @@ function M.python(input, opts)
   if not Path:new(abs_path):exists() then return nil, "Path not found: " .. abs_path end
   if on_log then on_log("cwd: " .. abs_path) end
   if on_log then on_log("code:\n" .. input.code) end
-  local container_image = input.container_image or "python:3.11-slim-bookworm"
+  local container_image = input.container_image or "python:3.14-slim-bookworm"
   if not on_complete then return nil, "on_complete not provided" end
   Helpers.confirm(
     "Are you sure you want to run the following python code in the `"
@@ -716,7 +737,7 @@ M._tools = {
   require("avante.llm_tools.glob"),
   {
     name = "rag_search",
-    enabled = function() return Config.rag_service.enabled and RagService.is_ready() end,
+    enabled = function() return Config.rag_service.enabled and require("avante.rag_service").is_ready() end,
     description = "Use Retrieval-Augmented Generation (RAG) to search for relevant information from an external knowledge base or documents. This tool retrieves relevant context from a large dataset and integrates it into the response generation process, improving accuracy and relevance. Use it when answering questions that require factual knowledge beyond what the model has been trained on.",
     param = {
       type = "table",

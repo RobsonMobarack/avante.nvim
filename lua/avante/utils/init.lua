@@ -8,7 +8,6 @@ local lsp = vim.lsp
 
 local log = require("avante.utils.log")
 local LRUCache = require("avante.utils.lru_cache")
-local diff2search_replace = require("avante.utils.diff2search_replace")
 
 ---@class avante.utils: LazyUtilCore
 ---@field tokens avante.utils.tokens
@@ -394,7 +393,9 @@ function M.notify(msg, opts)
   opts = opts or {}
   if type(msg) == "table" then
     ---@diagnostic disable-next-line: no-unknown
-    msg = table.concat(vim.tbl_filter(function(line) return line or false end, msg), "\n")
+    local lines = vim.tbl_filter(function(line) return line or false end, msg)
+    vim.print(lines)
+    msg = table.concat(lines, "\n")
   end
   ---@diagnostic disable-next-line: undefined-field
   if opts.stacktrace then
@@ -1684,6 +1685,7 @@ end
 ---@param diff string
 ---@return string
 function M.fix_diff(diff)
+  local diff2search_replace = require("avante.utils.diff2search_replace")
   diff = diff2search_replace(diff)
   -- Normalize block headers to the expected ones (fix for some LLMs output)
   diff = diff:gsub("<<<<<<<%s*SEARCH", "------- SEARCH")
@@ -1742,7 +1744,7 @@ function M.get_unified_diff(text1, text2, opts)
   opts.result_type = "unified"
   opts.ctxlen = opts.ctxlen or 3
 
-  return vim.diff(text1, text2, opts)
+  return vim.text.diff(text1, text2, opts)
 end
 
 function M.is_floating_window(win_id)

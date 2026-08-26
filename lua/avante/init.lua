@@ -1,7 +1,6 @@
 ---@mod avante-nvim avante.nvim
 ---
 ---@brief [[
----
 --- avante.nvim is a Neovim plugin designed to emulate the behaviour of the Cursor
 --- AI IDE. It provides AI-driven code suggestions, chat, code editing, and the
 --- ability to apply recommendations directly to source files.
@@ -16,123 +15,50 @@
 ---   and Kimi CLI.
 --- - Optional RAG service and web-search tools.
 ---
---- Installation~
+---@brief ]]
+---@toc avante-contents
 ---
---- Requirements~
+---@mod avante-installation Installation
 ---
---- avante.nvim requires Neovim 0.11.0 or later.
+---@brief [[
+---See the official README at https://github.com/yetone/avante.nvim for installation instructions.
+---@brief ]]
 ---
+---@mod avante-requirements Requirements
+---@brief [[
+--- avante.nvim requires Neovim 0.12.0 or later.
+--- Mandatory dependencies are:
+--- - 'nvim-lua/plenary.nvim'
+--- - 'MunifTanjim/nui.nvim'.
 ---
---- See the official README at https://github.com/yetone/avante.nvim for installation instructions.
+--- Optional dependencies are:
+--- - 'MeanderingProgrammer/render-markdown.nvim'
+--- - https://github.com/Kaiser-Yang/blink-cmp-avante for autocompletion
 ---
---- Usage~
+--- If you wish to build from source, then `cargo` is required. Otherwise `curl` and `tar` will be used to get prebuilt binary from GitHub. See |:AvanteBuild|.
+---@brief ]]
+---@mod avante-usage Usage
 ---
+---@brief [[
 --- Basic workflow:
 ---
 --- 1. Open a code file in Neovim.
 --- 2. Run |:AvanteAsk| with a question, or open the chat with |:AvanteChat|.
 --- 3. Review the AI response and suggested changes.
 --- 4. Apply edits from the sidebar with the configured keymaps.
----
---- API keys~
----
---- Scoped API keys are recommended when you want credentials used only by
---- Avante:
---->
----   export AVANTE_ANTHROPIC_API_KEY=your-claude-api-key
----   export AVANTE_OPENAI_API_KEY=your-openai-api-key
----   export AVANTE_AZURE_OPENAI_API_KEY=your-azure-api-key
----   export AVANTE_GEMINI_API_KEY=your-gemini-api-key
----   export AVANTE_CO_API_KEY=your-cohere-api-key
----   export AVANTE_MOONSHOT_API_KEY=your-moonshot-api-key
----<
----
---- Legacy/global keys are also supported:
---->
----   export ANTHROPIC_API_KEY=your-api-key
----   export OPENAI_API_KEY=your-api-key
----   export AZURE_OPENAI_API_KEY=your-api-key
----<
----
---- Bedrock can use `BEDROCK_KEYS` or the AWS default credentials chain:
---->
----   export BEDROCK_KEYS=aws_access_key_id,aws_secret_access_key,aws_region[,aws_session_token]
----<
----
---- Claude Pro/Max subscription~
----
---- Set the Claude provider `auth_type` to `"max"`:
---->
----   require("avante").setup({
----     providers = {
----       claude = {
----         auth_type = "max",
----       },
----     },
----   })
----<
----
---- After reopening Neovim, complete the browser authentication flow. If needed,
---- run:
---->
----   :AvanteSwitchProvider
----<
----
---- FAQ~
----
---- How do I disable agentic mode?~
----
---- Set:
---->
----   require("avante").setup({
----     mode = "legacy",
----   })
----<
----
---- Agentic mode uses AI tools to automatically generate and apply changes.
---- Legacy mode uses the traditional planning flow without automatic tool
---- execution.
----
---- To keep agentic mode but disable specific tools:
---->
----   require("avante").setup({
----     mode = "agentic",
----     disabled_tools = { "bash", "python" },
----   })
----<
----
---- Why are my default keymaps missing?~
----
---- If a default mapping conflicts with an existing mapping, Avante does not
---- override it. Configure your own keymaps or change the existing mappings.
----
---- How do I use markdown rendering?~
----
---- Install a markdown renderer and include the `Avante` filetype in its
---- supported filetypes. For render-markdown.nvim:
---->
----   {
----     "MeanderingProgrammer/render-markdown.nvim",
----     opts = {
----       file_types = { "markdown", "Avante" },
----     },
----     ft = { "markdown", "Avante" },
----   }
----<
----
 ---@brief ]]
-
----@toc avante-contents
+---@tag avante-zen-mode
+---@brief [[
+---This is an era of Coding Agent CLIs. Allegedly "editors are no longer needed": you only need to use the CLI in the terminal. But have people realized that for more than half a century, Terminal-based Editors have solved and standardized the biggest problem with Terminal-based applications — that is, the awkward TUI interactions! No matter how much these Coding Agent CLIs optimize their UI/UX, their UI/UX will always be a subset of Terminal-based Editors (Vim, Emacs)! They cannot achieve Vim’s elegant action + text objects abstraction (imagine how you usually edit large multi-line prompts in an Agent CLI), nor can they leverage thousands of mature Vim/Neovim plugins to help optimize TUI UI/UX—such as easymotions and so on. Moreover, when they want to view or modify code, they often have to jump into other applications which forcibly interrupts the UI/UX experience.
+---Therefore, Avante’s Zen Mode was born! It looks like a Vibe Coding Agent CLI but it is completely Neovim underneath. So you can use your muscle-memory Vim operations and those rich and mature Neovim plugins on it. At the same time, by leveraging [ACP](https://github.com/yetone/avante.nvim#acp-support) it has all capabilities of claude code / gemini-cli / codex! Why not enjoy both?
+---Now all you need to do is alias this command to avante; then every time you simply type avante just like using claude code and enter Avante’s Zen Mode!
+---@brief ]]
+---@mod avante
 
 local api = vim.api
 
 local Utils = require("avante.utils")
-local Sidebar = require("avante.sidebar")
-local Selection = require("avante.selection")
-local Suggestion = require("avante.suggestion")
 local Config = require("avante.config")
-local Diff = require("avante.diff")
-local RagService = require("avante.rag_service")
 
 ---@class Avante
 local M = {
@@ -183,7 +109,10 @@ end
 
 local H = {}
 
+---Registers keymaps
+---@see avante.Config.mappings
 function H.keymaps()
+  local Diff = require("avante.diff")
   vim.keymap.set({ "n", "v" }, "<Plug>(AvanteAsk)", function() require("avante.api").ask() end, { noremap = true })
   vim.keymap.set(
     { "n", "v" },
@@ -503,14 +432,17 @@ function M._init(id)
   local suggestion = M.suggestions[id]
 
   if not sidebar then
+    local Sidebar = require("avante.sidebar")
     sidebar = Sidebar:new(id)
     M.sidebars[id] = sidebar
   end
   if not selection then
+    local Selection = require("avante.selection")
     selection = Selection:new(id)
     M.selections[id] = selection
   end
   if not suggestion then
+    local Suggestion = require("avante.suggestion")
     suggestion = Suggestion:new(id)
     M.suggestions[id] = suggestion
   end
@@ -592,8 +524,9 @@ setmetatable(M.toggle, {
 
 M.slash_commands_id = nil
 
----@tag avante-init-setup
----Main setup function that calls each submodule setup.
+---Main setup function that calls each submodule (repo_map, html2md,...) setup.
+---It is advised to pass configuration via vim.g.avante instead
+---@see vim.g.avante
 ---@param opts? avante.Config
 function M.setup(opts)
   ---PERF: we can still allow running require("avante").setup() multiple times to override config if users wish to
@@ -618,7 +551,7 @@ function M.setup(opts)
 
   M.did_setup = true
 
-  if Config.rag_service.enabled then RagService.run_rag_service() end
+  if Config.rag_service.enabled then require("avante.rag_service").run_rag_service() end
 
   local has_cmp, cmp = pcall(require, "cmp")
   if has_cmp then
