@@ -47,7 +47,7 @@ $(foreach lua_version,$(LUA_VERSIONS),$(eval $(call make_definitions,$(lua_versi
 
 define build_package
 $1-$2:
-	cargo build --release --features=$1 -p avante-$2 $(if $(CARGO_TARGET),--target $(CARGO_TARGET))
+	cargo build --release --no-default-features --features=$1 -p avante-$2 $(if $(CARGO_TARGET),--target $(CARGO_TARGET))
 	cp $(TARGET_DIR)/libavante_$(shell echo $2 | tr - _).$(CARGO_EXT) $(BUILD_DIR)/avante_$(shell echo $2 | tr - _).$(EXT)
 endef
 
@@ -99,13 +99,13 @@ docgen:
 	nvim -u NONE -i NONE --headless +'helptags doc' +'quit!'
 
 luacheck:
-	@luacheck `find \( -path './target' -prune \) -o -name "*.lua" -print` --codes
+	luacheck `find \( -path './target' -prune \) -o -name "*.lua" -print` --codes
 
 luastylecheck:
-	@stylua --check lua/ plugin/ tests/
+	stylua --check lua/ plugin/ tests/
 
 stylefix:
-	@stylua lua/ plugin/
+	stylua lua/ plugin/
 
 .PHONY: ruststylecheck
 ruststylecheck:
@@ -117,7 +117,7 @@ rustlint:
 
 .PHONY: rusttest
 rusttest:
-	@cargo test --features luajit
+	cargo test --features luajit
 
 .PHONY: luatest
 luatest:
@@ -137,7 +137,7 @@ lint: luacheck luastylecheck ruststylecheck rustlint
 
 .PHONY: lua-typecheck
 lua-typecheck:
-	@./scripts/lua-typecheck.sh
+	./scripts/lua-typecheck.sh
 
 .PHONY: build-image
 build-image:
@@ -146,3 +146,16 @@ build-image:
 .PHONY: push-image
 push-image: build-image
 	docker push $(RAG_SERVICE_IMAGE)
+
+.PHONY: rag-venv
+rag-venv:
+	uv venv --python 3.13
+	source .venv/bin/activate
+	# uv build
+	uv pip install py/rag-service
+
+
+.PHONY: rag-start
+rag-start:
+	# append your flags to this command
+	cd py/rag-service && uv run avante-rag-service

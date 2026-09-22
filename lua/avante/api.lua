@@ -33,8 +33,15 @@ function M.switch_input_provider(target_provider)
   })
 end
 
----@param target avante.ProviderName
-function M.switch_provider(target) require("avante.providers").refresh(target) end
+---@param provider_name avante.ProviderName the provider to switch to
+---@param save_choice? boolean Persist the provider as the startup choice
+function M.switch_provider(provider_name, save_choice)
+  require("avante.providers").refresh(provider_name)
+  if save_choice then
+    local provider = Config.acp_providers[provider_name] or require("avante.providers")[provider_name]
+    Config.save_last_model(provider.model, provider_name, true)
+  end
+end
 
 ---@param path string
 local function to_windows_path(path)
@@ -256,9 +263,10 @@ function M.focus(opts)
   end
 end
 
----Select a model
+---Select a model from current provider (default) or all providers
+---@param all? boolean
 ---Saves the choice to stdpath("state")
-function M.select_model() require("avante.model_selector").open() end
+function M.select_model(all) require("avante.model_selector").open(all) end
 
 function M.select_acp_model() require("avante.acp_config_selector").open_model() end
 

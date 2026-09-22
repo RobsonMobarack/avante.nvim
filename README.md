@@ -24,6 +24,27 @@
 
 <https://github.com/user-attachments/assets/86140bfd-08b4-483d-a887-1b701d9e37dd>
 
+## Table of contents
+
+- [Features](#features)
+- [Avante Zen Mode](#avante-zen-mode)
+- [Project instructions](#project-instructions-with-avantemd)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Key Bindings](#key-bindings)
+- [Commands](#commands)
+- [Highlight Groups](#highlight-groups)
+- [Fast Apply](#fast-apply)
+- [ACP Support](#acp-support)
+- [RAG Service](#rag-service)
+- [Web Search Engines](#web-search-engines)
+- [Custom Tools](#custom-tools)
+- [MCP](#mcp)
+- [Integrations](#integrations)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Sponsorship ❤️
 
 If you like this project, please consider supporting me on Patreon, as it helps me to continue maintaining and improving it:
@@ -42,9 +63,9 @@ If you like this project, please consider supporting me on Patreon, as it helps 
 
 ## Avante Zen Mode
 
-It is possible to launch avante such that it looks like a typical Vibe Coding Agent CLI but while being completely Neovim underneath. So you can use your muscle-memory Vim operations and those rich and mature Neovim plugins on it. At the same time, by leveraging [ACP](https://github.com/yetone/avante.nvim#acp-support) it has all capabilities of claude code / gemini-cli / codex! Why not enjoy both?
+It is possible to launch avante such that it looks like a typical Vibe Coding Agent CLI while being Neovim underneath. At the same time, by leveraging [ACP](https://github.com/yetone/avante.nvim#acp-support) it has all capabilities of claude code / gemini-cli / codex! Why not enjoy both?
 
-Now all you need to do is install [./contrib/avante] in your PATH (or create the equivalent alias); then every time you simply type avante just like using claude code and enter Avante’s Zen Mode!
+Now all you need to do is install [./contrib/avante](./contrib/avante) in your PATH (or create the equivalent alias); then every time you simply type `avante` just like using claude code and enter Avante’s Zen Mode!
 
 The effect is as follows:
 
@@ -488,7 +509,7 @@ _See [config.lua#L9](./lua/avante/config.lua) for the up to date full default co
   providers = {
     claude = {
       endpoint = "https://api.anthropic.com",
-      auth_type = "api" -- Set to "max" to sign in with Claude Pro/Max subscription
+      auth_type = "api", -- Set to "max" to sign in with Claude Pro/Max subscription
       model = "claude-3-5-sonnet-20241022",
       extra_request_body = {
         temperature = 0.75,
@@ -1011,56 +1032,6 @@ The following key bindings are available for use with `avante.nvim`:
 > If you are using `lazy.nvim`, then all keymap here will be safely set, meaning if `<leader>aa` is already binded, then avante.nvim won't bind this mapping.
 > In this case, user will be responsible for setting up their own. See [notes on keymaps](https://github.com/yetone/avante.nvim/wiki#keymaps-and-api-i-guess) for more details.
 
-### Neotree shortcut
-
-In the neotree sidebar, you can also add a new keyboard shortcut to quickly add `file/folder` to `Avante Selected Files`.
-
-<details>
-<summary>Neotree configuration</summary>
-
-```lua
-return {
-  {
-    'nvim-neo-tree/neo-tree.nvim',
-    config = function()
-      require('neo-tree').setup({
-        filesystem = {
-          commands = {
-            avante_add_files = function(state)
-              local node = state.tree:get_node()
-              local filepath = node:get_id()
-              local relative_path = require('avante.utils').relative_path(filepath)
-
-              local sidebar = require('avante').get()
-
-              local open = sidebar:is_open()
-              -- ensure avante sidebar is open
-              if not open then
-                require('avante.api').ask()
-                sidebar = require('avante').get()
-              end
-
-              sidebar.file_selector:add_selected_file(relative_path)
-
-              -- remove neo tree buffer
-              if not open then
-                sidebar.file_selector:remove_selected_file('neo-tree filesystem [1]')
-              end
-            end,
-          },
-          window = {
-            mappings = {
-              ['oa'] = 'avante_add_files',
-            },
-          },
-        },
-      })
-    end,
-  },
-}
-```
-
-</details>
 
 ## Commands
 
@@ -1076,7 +1047,7 @@ return {
 | `:AvanteFocus`                     | Switch focus to/from the sidebar                                                                            |                                                     |
 | `:AvanteRefresh`                   | Refresh all Avante windows                                                                                  |                                                     |
 | `:AvanteStop`                      | Stop the current AI request                                                                                 |                                                     |
-| `:AvanteSwitchProvider`            | Switch AI provider (e.g. openai)                                                                            |                                                     |
+| `:AvanteSwitchProvider [--save]`   | Switch AI provider; `--save` restores it on startup, overriding the configured default                                           |                                                     |
 | `:AvanteShowRepoMap`               | Show repo map for project's structure                                                                       |                                                     |
 | `:AvanteToggle`                    | Toggle the Avante sidebar                                                                                   |                                                     |
 | `:AvanteModels`                    | Show model list                                                                                             |                                                     |
@@ -1408,21 +1379,23 @@ If you have the following structure:
 
 ## Integrations
 
-Avante.nvim can be extended to work with other plugins by using its extension modules. For instance with [`nvim-tree`](https://github.com/nvim-tree/nvim-tree.lua), see [the wiki](https://github.com/yetone/avante.nvim/wiki/plugin%E2%80%90integrations).
+Avante.nvim can be extended to work with other plugins by using its extension modules:
+- [`nvim-tree`](https://github.com/nvim-tree/nvim-tree.lua)
+- neotree
+
+See [the wiki](https://github.com/yetone/avante.nvim/wiki/plugin%E2%80%90integrations) for details.
 
 ## TODOs
 
-- [x] Chat with current file
-- [x] Apply diff patch
 - [x] Chat with the selected block
-- [x] Slash commands
 - [x] Edit the selected block
 - [x] Smart Tab (Cursor Flow)
 - [x] Chat with project (You can use `@codebase` to chat with the whole project)
-- [x] Chat with selected files
-- [x] Tool use
-- [x] MCP
-- [x] ACP
+- [ ] improve security aspects, document sandboxing approach
+- [ ] make RAG service more accessible
+- [ ] move more of the internal code to rust
+- [ ] better debugging capabilities (for prompts notably)
+- [ ] provide an helper to report bugs more effectively
 - [ ] Better codebase indexing
 
 ## Roadmap
